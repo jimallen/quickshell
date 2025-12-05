@@ -5,6 +5,10 @@ A modern, feature-rich status bar for Hyprland built with [Quickshell](https://q
 ![Quickshell Bar](https://img.shields.io/badge/Hyprland-Ready-blue)
 ![QML](https://img.shields.io/badge/Built%20with-QML-green)
 
+## Preview
+
+![Bar Preview](screenshots/bar-preview.png)
+
 ## Features
 
 - **Workspaces**: Pill-shaped indicators with workspace numbers and app icons
@@ -17,10 +21,6 @@ A modern, feature-rich status bar for Hyprland built with [Quickshell](https://q
 - **DND Toggle**: Do Not Disturb mode via swaync
 - **Power Menu**: Lock, logout, reboot, and shutdown options
 - **Notch Design**: Elegant dropdown popups with concave corner notches connecting to the bar
-
-## Screenshots
-
-*Coming soon*
 
 ## Dependencies
 
