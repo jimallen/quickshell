@@ -1,29 +1,17 @@
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
-import Quickshell.Wayland
-import Quickshell.Hyprland
 import Quickshell.Io
 import ".."
 
-Item {
+DropdownWidget {
     id: powerWidget
-    Layout.preferredWidth: powerText.width
-    Layout.preferredHeight: parent.height
-    Layout.rightMargin: 8
-
-    required property var barWindow
-
-    Connections {
-        target: barWindow
-        function onCloseAllPopups() {
-            dropdownOpen = false
-        }
-    }
+    popupWidth: 180
+    popupHeight: 165
+    popupXOffset: 200
 
     property string currentProfile: "balanced"
     property var availableProfiles: ["performance", "balanced", "power-saver"]
-    property bool dropdownOpen: false
 
     // Profile icons (using nf-md icons)
     function getProfileIcon(profile) {
@@ -78,9 +66,10 @@ Item {
         onTriggered: profileGetProc.running = true
     }
 
+    // Icon content
     Text {
         id: powerText
-        anchors.centerIn: parent
+        anchors.verticalCenter: parent.verticalCenter
         text: getProfileIcon(currentProfile)
         color: getProfileColor(currentProfile)
         font.pixelSize: Theme.fontSize + 2
@@ -88,123 +77,83 @@ Item {
         font.bold: true
     }
 
-    MouseArea {
-        anchors.fill: parent
-        hoverEnabled: true
-        cursorShape: Qt.PointingHandCursor
-        onClicked: dropdownOpen = !dropdownOpen
-    }
+    // Popup content
+    popupContent: Component {
+        Column {
+            spacing: 6
 
-    // Focus grab to close popup when clicking outside
-    HyprlandFocusGrab {
-        id: powerFocusGrab
-        windows: [powerPopup]
-        active: dropdownOpen
-        onCleared: dropdownOpen = false
-    }
+            // Header
+            Text {
+                text: "󰾅 Power Profile"
+                color: Theme.colFg
+                font.pixelSize: Theme.fontSize
+                font.family: Theme.fontFamily
+                font.bold: true
+                width: parent.width
+            }
 
-    // Power profile dropdown popup
-    PopupWindow {
-        id: powerPopup
-        visible: dropdownOpen
-        anchor.window: barWindow
-        anchor.rect.x: barWindow.width - 200
-        anchor.rect.y: 40
-        implicitWidth: 180
-        implicitHeight: 165
-        color: "transparent"
+            Rectangle {
+                width: parent.width
+                height: 1
+                color: Theme.colMuted
+            }
 
-        Rectangle {
-            anchors.fill: parent
-            color: Theme.colBg
-            radius: 10
-            border.color: Theme.colMuted
-            border.width: 1
-
-            Column {
-                anchors.fill: parent
-                anchors.margins: 12
-                spacing: 6
-
-                // Header
-                Text {
-                    text: "󰾅 Power Profile"
-                    color: Theme.colFg
-                    font.pixelSize: Theme.fontSize
-                    font.family: Theme.fontFamily
-                    font.bold: true
-                    width: parent.width
-                }
+            // Profile list
+            Repeater {
+                model: powerWidget.availableProfiles
 
                 Rectangle {
                     width: parent.width
-                    height: 1
-                    color: Theme.colMuted
-                }
+                    height: 32
+                    color: profileMouseArea.containsMouse ? Qt.rgba(255, 255, 255, 0.1) : "transparent"
+                    radius: 6
 
-                // Profile list
-                Repeater {
-                    model: availableProfiles
+                    RowLayout {
+                        anchors.fill: parent
+                        anchors.margins: 6
+                        spacing: 8
 
-                    Rectangle {
-                        width: parent.width
-                        height: 32
-                        color: profileMouseArea.containsMouse ? Qt.rgba(255, 255, 255, 0.1) : "transparent"
-                        radius: 6
-
-                        RowLayout {
-                            anchors.fill: parent
-                            anchors.margins: 6
-                            spacing: 8
-
-                            Text {
-                                text: getProfileIcon(modelData)
-                                color: getProfileColor(modelData)
-                                font.pixelSize: Theme.fontSize
-                                font.family: Theme.fontFamily
-                            }
-
-                            Text {
-                                text: modelData.charAt(0).toUpperCase() + modelData.slice(1).replace("-", " ")
-                                color: modelData === currentProfile ? getProfileColor(modelData) : Theme.colFg
-                                font.pixelSize: Theme.fontSize - 1
-                                font.family: Theme.fontFamily
-                                font.bold: modelData === currentProfile
-                                Layout.fillWidth: true
-                            }
-
-                            Text {
-                                text: modelData === currentProfile ? "󰄬" : ""
-                                color: getProfileColor(modelData)
-                                font.pixelSize: Theme.fontSize
-                                font.family: Theme.fontFamily
-                            }
+                        Text {
+                            text: powerWidget.getProfileIcon(modelData)
+                            color: powerWidget.getProfileColor(modelData)
+                            font.pixelSize: Theme.fontSize
+                            font.family: Theme.fontFamily
                         }
 
-                        MouseArea {
-                            id: profileMouseArea
-                            anchors.fill: parent
-                            hoverEnabled: true
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: {
-                                if (modelData !== currentProfile) {
-                                    // Update UI immediately
-                                    powerWidget.currentProfile = modelData
-                                    // Then run the command
-                                    profileSetProc.targetProfile = modelData
-                                    profileSetProc.running = true
-                                }
-                                dropdownOpen = false
+                        Text {
+                            text: modelData.charAt(0).toUpperCase() + modelData.slice(1).replace("-", " ")
+                            color: modelData === powerWidget.currentProfile ? powerWidget.getProfileColor(modelData) : Theme.colFg
+                            font.pixelSize: Theme.fontSize - 1
+                            font.family: Theme.fontFamily
+                            font.bold: modelData === powerWidget.currentProfile
+                            Layout.fillWidth: true
+                        }
+
+                        Text {
+                            text: modelData === powerWidget.currentProfile ? "󰄬" : ""
+                            color: powerWidget.getProfileColor(modelData)
+                            font.pixelSize: Theme.fontSize
+                            font.family: Theme.fontFamily
+                        }
+                    }
+
+                    MouseArea {
+                        id: profileMouseArea
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: {
+                            if (modelData !== powerWidget.currentProfile) {
+                                // Update UI immediately
+                                powerWidget.currentProfile = modelData
+                                // Then run the command
+                                profileSetProc.targetProfile = modelData
+                                profileSetProc.running = true
                             }
+                            powerWidget.dropdownOpen = false
                         }
                     }
                 }
-            }
-        }
-
-        onVisibleChanged: {
-            if (!visible) {
-                dropdownOpen = false
             }
         }
     }

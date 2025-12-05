@@ -1,31 +1,21 @@
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
-import Quickshell.Wayland
-import Quickshell.Hyprland
 import Quickshell.Io
 import ".."
 
-Item {
+DropdownWidget {
     id: wifiWidget
-    Layout.preferredWidth: wifiText.width
-    Layout.preferredHeight: parent.height
-    Layout.rightMargin: 8
-
-    required property var barWindow
-
-    Connections {
-        target: barWindow
-        function onCloseAllPopups() {
-            wifiDropdownOpen = false
-        }
-    }
+    popupWidth: 240
+    popupHeight: Math.min(wifiNetworks.length * 40 + 50, 350)
+    popupXOffset: 250
 
     property string wifiSSID: ""
     property int wifiSignal: 0
     property bool wifiConnected: false
     property var wifiNetworks: []
-    property bool wifiDropdownOpen: false
+
+    onOpened: wifiScanProc.running = true
 
     // WiFi current connection
     Process {
@@ -98,9 +88,10 @@ Item {
         onTriggered: wifiCurrentProc.running = true
     }
 
+    // Icon content
     Text {
         id: wifiText
-        anchors.centerIn: parent
+        anchors.verticalCenter: parent.verticalCenter
         text: !wifiConnected ? "󰤭" :
               wifiSignal >= 80 ? "󰤨" :
               wifiSignal >= 60 ? "󰤥" :
@@ -112,133 +103,88 @@ Item {
         font.bold: true
     }
 
-    MouseArea {
-        anchors.fill: parent
-        hoverEnabled: true
-        cursorShape: Qt.PointingHandCursor
-        onClicked: {
-            wifiDropdownOpen = !wifiDropdownOpen
-            if (wifiDropdownOpen) {
-                wifiScanProc.running = true
+    // Popup content
+    popupContent: Component {
+        Column {
+            spacing: 4
+
+            // Header
+            Text {
+                text: wifiWidget.wifiConnected ? "󰤨 " + wifiWidget.wifiSSID : "󰤭 Not Connected"
+                color: Theme.colFg
+                font.pixelSize: Theme.fontSize
+                font.family: Theme.fontFamily
+                font.bold: true
+                width: parent.width
+                horizontalAlignment: Text.AlignLeft
             }
-        }
-    }
 
-    // Focus grab to close popup when clicking outside
-    HyprlandFocusGrab {
-        id: wifiFocusGrab
-        windows: [wifiPopup]
-        active: wifiDropdownOpen
-        onCleared: wifiDropdownOpen = false
-    }
+            Rectangle {
+                width: parent.width
+                height: 1
+                color: Theme.colMuted
+            }
 
-    // WiFi dropdown popup
-    PopupWindow {
-        id: wifiPopup
-        visible: wifiDropdownOpen
-        anchor.window: barWindow
-        anchor.rect.x: barWindow.width - 250
-        anchor.rect.y: 40
-        implicitWidth: 240
-        implicitHeight: Math.min(wifiNetworks.length * 40 + 50, 350)
-        color: "transparent"
+            // Network list
+            ListView {
+                id: networkListView
+                width: parent.width
+                height: parent.height - 40
+                clip: true
+                model: wifiWidget.wifiNetworks
+                spacing: 2
 
-        Rectangle {
-            anchors.fill: parent
-            color: Theme.colBg
-            radius: 10
-            border.color: Theme.colMuted
-            border.width: 1
+                delegate: Rectangle {
+                    width: networkListView.width
+                    height: 36
+                    color: mouseArea.containsMouse ? Qt.rgba(255, 255, 255, 0.1) : "transparent"
+                    radius: 6
 
-            Column {
-                anchors.fill: parent
-                anchors.margins: 8
-                spacing: 4
+                    RowLayout {
+                        anchors.fill: parent
+                        anchors.margins: 6
+                        spacing: 8
 
-                // Header
-                Text {
-                    text: wifiConnected ? "󰤨 " + wifiSSID : "󰤭 Not Connected"
-                    color: Theme.colFg
-                    font.pixelSize: Theme.fontSize
-                    font.family: Theme.fontFamily
-                    font.bold: true
-                    width: parent.width
-                    horizontalAlignment: Text.AlignLeft
-                }
-
-                Rectangle {
-                    width: parent.width
-                    height: 1
-                    color: Theme.colMuted
-                }
-
-                // Network list
-                ListView {
-                    id: networkListView
-                    width: parent.width
-                    height: parent.height - 40
-                    clip: true
-                    model: wifiNetworks
-                    spacing: 2
-
-                    delegate: Rectangle {
-                        width: networkListView.width
-                        height: 36
-                        color: mouseArea.containsMouse ? Qt.rgba(255, 255, 255, 0.1) : "transparent"
-                        radius: 6
-
-                        RowLayout {
-                            anchors.fill: parent
-                            anchors.margins: 6
-                            spacing: 8
-
-                            Text {
-                                text: modelData.signal >= 80 ? "󰤨" :
-                                      modelData.signal >= 60 ? "󰤥" :
-                                      modelData.signal >= 40 ? "󰤢" :
-                                      modelData.signal >= 20 ? "󰤟" : "󰤯"
-                                color: Theme.colNetwork
-                                font.pixelSize: Theme.fontSize
-                                font.family: Theme.fontFamily
-                            }
-
-                            Text {
-                                text: modelData.ssid
-                                color: modelData.ssid === wifiSSID ? Theme.colNetwork : Theme.colFg
-                                font.pixelSize: Theme.fontSize - 1
-                                font.family: Theme.fontFamily
-                                font.bold: modelData.ssid === wifiSSID
-                                Layout.fillWidth: true
-                                elide: Text.ElideRight
-                            }
-
-                            Text {
-                                text: modelData.security ? "󰌾" : ""
-                                color: Theme.colMuted
-                                font.pixelSize: Theme.fontSize - 2
-                                font.family: Theme.fontFamily
-                            }
+                        Text {
+                            text: modelData.signal >= 80 ? "󰤨" :
+                                  modelData.signal >= 60 ? "󰤥" :
+                                  modelData.signal >= 40 ? "󰤢" :
+                                  modelData.signal >= 20 ? "󰤟" : "󰤯"
+                            color: Theme.colNetwork
+                            font.pixelSize: Theme.fontSize
+                            font.family: Theme.fontFamily
                         }
 
-                        MouseArea {
-                            id: mouseArea
-                            anchors.fill: parent
-                            hoverEnabled: true
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: {
-                                wifiConnectProc.targetSSID = modelData.ssid
-                                wifiConnectProc.running = true
-                                wifiDropdownOpen = false
-                            }
+                        Text {
+                            text: modelData.ssid
+                            color: modelData.ssid === wifiWidget.wifiSSID ? Theme.colNetwork : Theme.colFg
+                            font.pixelSize: Theme.fontSize - 1
+                            font.family: Theme.fontFamily
+                            font.bold: modelData.ssid === wifiWidget.wifiSSID
+                            Layout.fillWidth: true
+                            elide: Text.ElideRight
+                        }
+
+                        Text {
+                            text: modelData.security ? "󰌾" : ""
+                            color: Theme.colMuted
+                            font.pixelSize: Theme.fontSize - 2
+                            font.family: Theme.fontFamily
+                        }
+                    }
+
+                    MouseArea {
+                        id: mouseArea
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: {
+                            wifiConnectProc.targetSSID = modelData.ssid
+                            wifiConnectProc.running = true
+                            wifiWidget.dropdownOpen = false
                         }
                     }
                 }
-            }
-        }
-
-        onVisibleChanged: {
-            if (!visible) {
-                wifiDropdownOpen = false
             }
         }
     }

@@ -25,23 +25,26 @@ shell.qml           # Main entry point, assembles the bar layout
 Theme.qml           # Singleton with colors, fonts, and theme settings
 qmldir              # QML module definition for Theme singleton
 components/         # Modular widget components
-  ├── WorkspaceBar.qml   # Hyprland workspaces with app icons
-  ├── WindowInfo.qml     # Current window layout and title
-  ├── CenterInfo.qml     # Date and weather display
-  ├── SystemStats.qml    # CPU, memory, disk, volume, battery
-  ├── Clock.qml          # Time display
-  ├── WifiWidget.qml        # WiFi status with dropdown
-  ├── BluetoothWidget.qml   # Bluetooth status with dropdown
-  ├── PowerProfileWidget.qml # Power profile selector with dropdown
-  ├── SlackWidget.qml       # Slack notification indicator with dropdown
-  ├── WhatsAppWidget.qml    # WhatsApp notification indicator with dropdown
-  └── Separator.qml         # Visual separator line
+  ├── DropdownWidget.qml   # Base component for click-to-open dropdown widgets
+  ├── WeatherStatItem.qml  # Reusable stat row for weather popup
+  ├── WorkspaceBar.qml     # Hyprland workspaces with app icons (pill-shaped)
+  ├── WindowInfo.qml       # Current window title
+  ├── CenterInfo.qml       # Date/weather with hover popup showing detailed forecast
+  ├── SystemStats.qml      # CPU, memory, disk, volume, battery
+  ├── Clock.qml            # Time display
+  ├── WifiWidget.qml       # WiFi status with dropdown (extends DropdownWidget)
+  ├── BluetoothWidget.qml  # Bluetooth status with dropdown (extends DropdownWidget)
+  ├── PowerProfileWidget.qml # Power profile selector (extends DropdownWidget)
+  ├── SlackWidget.qml      # Slack indicator, click to focus app
+  ├── WhatsAppWidget.qml   # WhatsApp indicator, click to focus app
+  └── Separator.qml        # Visual separator line
 ```
 
 ### Key Components
 
 - **Theme.qml**: Singleton pragma provides `Theme.colBg`, `Theme.fontSize`, etc. to all components
-- **WorkspaceBar.qml**: Shows workspace numbers with deduplicated app icons (up to 4 per workspace). Uses `hyprctl clients -j | jq` for window data
+- **WorkspaceBar.qml**: Pill-shaped workspace indicators with numbers and deduplicated app icons (max 3). Hover effects and active state highlighting
+- **CenterInfo.qml**: Date and weather text; hover shows popup with location, temperature, condition, feels-like, min/max, wind, humidity, visibility, AQI (color-coded), and hourly rain forecast bars
 - **Widget components**: Each has its own Process components for data fetching and PopupWindow for dropdowns
 
 ### Key Patterns
@@ -76,8 +79,31 @@ components/         # Modular widget components
 2. Add Process components for data fetching with SplitParser
 3. Use `import ".."` to access Theme singleton
 4. Add the component to shell.qml's RowLayout
-5. For dropdowns:
-   - Add a `*DropdownOpen` property
-   - Add PopupWindow with `visible` bound to the dropdown property
-   - Add HyprlandFocusGrab (requires `import Quickshell.Hyprland`) to close popup on outside click
-   - Add Connections to barWindow's `closeAllPopups` signal to close when clicking on the bar
+5. For dropdowns, extend `DropdownWidget`:
+   ```qml
+   DropdownWidget {
+       id: myWidget
+       popupWidth: 200
+       popupHeight: 150
+       popupXOffset: 250  // from right edge of bar
+
+       // Icon content (default property - what shows in bar)
+       Text {
+           anchors.verticalCenter: parent.verticalCenter
+           text: "󰤨"
+           color: Theme.colFg
+       }
+
+       // Popup content (use myWidget.* for property references)
+       popupContent: Component {
+           Column {
+               Text { text: myWidget.someProperty }
+           }
+       }
+
+       // Optional: React to dropdown opening
+       onOpened: someProcess.running = true
+   }
+   ```
+   The base component handles: barWindow connection, dropdownOpen state, MouseArea toggle, HyprlandFocusGrab, and PopupWindow with styled Rectangle container.
+- no need to restart quickshell, it hot reloads the config on save.

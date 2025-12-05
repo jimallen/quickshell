@@ -59,22 +59,7 @@ ShellRoot {
                     spacing: 0
 
                     // Left padding
-                    Item { width: 8 }
-
-                    // Logo
-                    Rectangle {
-                        Layout.preferredWidth: 24
-                        Layout.preferredHeight: 24
-                        color: "transparent"
-
-                        Image {
-                            anchors.fill: parent
-                            source: "file:///home/jima/.config/quickshell/icons/tonybtw.png"
-                            fillMode: Image.PreserveAspectFit
-                        }
-                    }
-
-                    Item { width: 8 }
+                    Item { width: 12 }
 
                     // Workspaces
                     WorkspaceBar {
@@ -100,20 +85,18 @@ ShellRoot {
                     Item { Layout.fillWidth: true }
 
                     // Center: Date and Weather
-                    CenterInfo {}
+                    CenterInfo {
+                        barWindow: barWindow
+                    }
 
                     // Right spacer
                     Item { Layout.fillWidth: true }
 
                     // Slack indicator
-                    SlackWidget {
-                        barWindow: barWindow
-                    }
+                    SlackWidget {}
 
                     // WhatsApp indicator
-                    WhatsAppWidget {
-                        barWindow: barWindow
-                    }
+                    WhatsAppWidget {}
 
                     Separator {}
 

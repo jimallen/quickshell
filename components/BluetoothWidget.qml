@@ -1,31 +1,21 @@
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
-import Quickshell.Wayland
-import Quickshell.Hyprland
 import Quickshell.Io
 import ".."
 
-Item {
+DropdownWidget {
     id: btWidget
-    Layout.preferredWidth: btText.width
-    Layout.preferredHeight: parent.height
-    Layout.rightMargin: 8
-
-    required property var barWindow
-
-    Connections {
-        target: barWindow
-        function onCloseAllPopups() {
-            btDropdownOpen = false
-        }
-    }
+    popupWidth: 240
+    popupHeight: Math.max(btDevices.length * 40 + 100, 150)
+    popupXOffset: 280
 
     property bool btPowered: false
     property bool btConnected: false
     property string btConnectedDevice: ""
     property var btDevices: []
-    property bool btDropdownOpen: false
+
+    onOpened: btDevicesProc.running = true
 
     // Bluetooth status check
     Process {
@@ -138,199 +128,155 @@ Item {
         }
     }
 
+    // Icon content
     Text {
         id: btText
-        anchors.centerIn: parent
+        anchors.verticalCenter: parent.verticalCenter
         text: !btPowered ? "󰂲" :
               btConnected ? "󰂱" : "󰂯"
-        color: btPowered ? (btConnected ? Theme.colBluetooth : Theme.colBluetooth) : Theme.colMuted
+        color: btPowered ? Theme.colBluetooth : Theme.colMuted
         font.pixelSize: Theme.fontSize + 4
         font.family: Theme.fontFamily
         font.bold: true
     }
 
-    MouseArea {
-        anchors.fill: parent
-        hoverEnabled: true
-        cursorShape: Qt.PointingHandCursor
-        onClicked: {
-            btDropdownOpen = !btDropdownOpen
-            if (btDropdownOpen) {
-                btDevicesProc.running = true
-            }
-        }
-    }
+    // Popup content
+    popupContent: Component {
+        Column {
+            spacing: 4
 
-    // Focus grab to close popup when clicking outside
-    HyprlandFocusGrab {
-        id: btFocusGrab
-        windows: [btPopup]
-        active: btDropdownOpen
-        onCleared: btDropdownOpen = false
-    }
+            // Header with power toggle
+            RowLayout {
+                width: parent.width
+                spacing: 8
 
-    // Bluetooth dropdown popup
-    PopupWindow {
-        id: btPopup
-        visible: btDropdownOpen
-        anchor.window: barWindow
-        anchor.rect.x: barWindow.width - 280
-        anchor.rect.y: 40
-        implicitWidth: 240
-        implicitHeight: Math.max(btDevices.length * 40 + 100, 150)
-        color: "transparent"
-
-        Rectangle {
-            anchors.fill: parent
-            color: Theme.colBg
-            radius: 10
-            border.color: Theme.colMuted
-            border.width: 1
-
-            Column {
-                anchors.fill: parent
-                anchors.margins: 8
-                spacing: 4
-
-                // Header with power toggle
-                RowLayout {
-                    width: parent.width
-                    spacing: 8
-
-                    Text {
-                        text: btPowered ? (btConnected ? "󰂱 " + btConnectedDevice : "󰂯 Bluetooth") : "󰂲 Bluetooth Off"
-                        color: Theme.colFg
-                        font.pixelSize: Theme.fontSize
-                        font.family: Theme.fontFamily
-                        font.bold: true
-                        Layout.fillWidth: true
-                    }
-
-                    Rectangle {
-                        width: 40
-                        height: 20
-                        radius: 10
-                        color: btPowered ? Theme.colBluetooth : Theme.colMuted
-
-                        Rectangle {
-                            width: 16
-                            height: 16
-                            radius: 8
-                            color: Theme.colFg
-                            x: btPowered ? parent.width - width - 2 : 2
-                            anchors.verticalCenter: parent.verticalCenter
-
-                            Behavior on x {
-                                NumberAnimation { duration: 150 }
-                            }
-                        }
-
-                        MouseArea {
-                            anchors.fill: parent
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: {
-                                btPowerProc.powerOn = !btPowered
-                                btPowerProc.running = true
-                            }
-                        }
-                    }
+                Text {
+                    text: btWidget.btPowered ? (btWidget.btConnected ? "󰂱 " + btWidget.btConnectedDevice : "󰂯 Bluetooth") : "󰂲 Bluetooth Off"
+                    color: Theme.colFg
+                    font.pixelSize: Theme.fontSize
+                    font.family: Theme.fontFamily
+                    font.bold: true
+                    Layout.fillWidth: true
                 }
 
                 Rectangle {
-                    width: parent.width
-                    height: 1
-                    color: Theme.colMuted
-                }
+                    width: 40
+                    height: 20
+                    radius: 10
+                    color: btWidget.btPowered ? Theme.colBluetooth : Theme.colMuted
 
-                // Paired devices header
-                Text {
-                    text: "Paired Devices"
-                    color: Theme.colMuted
-                    font.pixelSize: Theme.fontSize - 2
-                    font.family: Theme.fontFamily
-                    visible: btPowered
-                }
+                    Rectangle {
+                        width: 16
+                        height: 16
+                        radius: 8
+                        color: Theme.colFg
+                        x: btWidget.btPowered ? parent.width - width - 2 : 2
+                        anchors.verticalCenter: parent.verticalCenter
 
-                // Device list
-                ListView {
-                    id: btDeviceListView
-                    width: parent.width
-                    height: parent.height - 80
-                    clip: true
-                    model: btDevices
-                    spacing: 2
-                    visible: btPowered
-
-                    delegate: Rectangle {
-                        width: btDeviceListView.width
-                        height: 36
-                        color: btMouseArea.containsMouse ? Qt.rgba(255, 255, 255, 0.1) : "transparent"
-                        radius: 6
-
-                        RowLayout {
-                            anchors.fill: parent
-                            anchors.margins: 6
-                            spacing: 8
-
-                            Text {
-                                text: "󰂯"
-                                color: Theme.colBluetooth
-                                font.pixelSize: Theme.fontSize
-                                font.family: Theme.fontFamily
-                            }
-
-                            Text {
-                                text: modelData.name
-                                color: modelData.name === btConnectedDevice ? Theme.colBluetooth : Theme.colFg
-                                font.pixelSize: Theme.fontSize - 1
-                                font.family: Theme.fontFamily
-                                font.bold: modelData.name === btConnectedDevice
-                                Layout.fillWidth: true
-                                elide: Text.ElideRight
-                            }
-
-                            Text {
-                                text: modelData.name === btConnectedDevice ? "Connected" : ""
-                                color: Theme.colBluetooth
-                                font.pixelSize: Theme.fontSize - 3
-                                font.family: Theme.fontFamily
-                            }
+                        Behavior on x {
+                            NumberAnimation { duration: 150 }
                         }
+                    }
 
-                        MouseArea {
-                            id: btMouseArea
-                            anchors.fill: parent
-                            hoverEnabled: true
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: {
-                                if (modelData.name === btConnectedDevice) {
-                                    btDisconnectProc.running = true
-                                } else {
-                                    btConnectProc.targetMAC = modelData.mac
-                                    btConnectProc.running = true
-                                }
-                                btDropdownOpen = false
-                            }
+                    MouseArea {
+                        anchors.fill: parent
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: {
+                            btPowerProc.powerOn = !btWidget.btPowered
+                            btPowerProc.running = true
                         }
                     }
                 }
+            }
 
-                // Empty state
-                Text {
-                    text: btPowered ? "No paired devices" : "Turn on Bluetooth to see devices"
-                    color: Theme.colMuted
-                    font.pixelSize: Theme.fontSize - 2
-                    font.family: Theme.fontFamily
-                    visible: btDevices.length === 0
-                    width: parent.width
-                    horizontalAlignment: Text.AlignHCenter
+            Rectangle {
+                width: parent.width
+                height: 1
+                color: Theme.colMuted
+            }
+
+            // Paired devices header
+            Text {
+                text: "Paired Devices"
+                color: Theme.colMuted
+                font.pixelSize: Theme.fontSize - 2
+                font.family: Theme.fontFamily
+                visible: btWidget.btPowered
+            }
+
+            // Device list
+            ListView {
+                id: btDeviceListView
+                width: parent.width
+                height: parent.height - 80
+                clip: true
+                model: btWidget.btDevices
+                spacing: 2
+                visible: btWidget.btPowered
+
+                delegate: Rectangle {
+                    width: btDeviceListView.width
+                    height: 36
+                    color: btMouseArea.containsMouse ? Qt.rgba(255, 255, 255, 0.1) : "transparent"
+                    radius: 6
+
+                    RowLayout {
+                        anchors.fill: parent
+                        anchors.margins: 6
+                        spacing: 8
+
+                        Text {
+                            text: "󰂯"
+                            color: Theme.colBluetooth
+                            font.pixelSize: Theme.fontSize
+                            font.family: Theme.fontFamily
+                        }
+
+                        Text {
+                            text: modelData.name
+                            color: modelData.name === btWidget.btConnectedDevice ? Theme.colBluetooth : Theme.colFg
+                            font.pixelSize: Theme.fontSize - 1
+                            font.family: Theme.fontFamily
+                            font.bold: modelData.name === btWidget.btConnectedDevice
+                            Layout.fillWidth: true
+                            elide: Text.ElideRight
+                        }
+
+                        Text {
+                            text: modelData.name === btWidget.btConnectedDevice ? "Connected" : ""
+                            color: Theme.colBluetooth
+                            font.pixelSize: Theme.fontSize - 3
+                            font.family: Theme.fontFamily
+                        }
+                    }
+
+                    MouseArea {
+                        id: btMouseArea
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: {
+                            if (modelData.name === btWidget.btConnectedDevice) {
+                                btDisconnectProc.running = true
+                            } else {
+                                btConnectProc.targetMAC = modelData.mac
+                                btConnectProc.running = true
+                            }
+                            btWidget.dropdownOpen = false
+                        }
+                    }
                 }
             }
-        }
 
-        onVisibleChanged: {
-            if (!visible) {
-                btDropdownOpen = false
+            // Empty state
+            Text {
+                text: btWidget.btPowered ? "No paired devices" : "Turn on Bluetooth to see devices"
+                color: Theme.colMuted
+                font.pixelSize: Theme.fontSize - 2
+                font.family: Theme.fontFamily
+                visible: btWidget.btDevices.length === 0
+                width: parent.width
+                horizontalAlignment: Text.AlignHCenter
             }
         }
     }
