@@ -25,16 +25,17 @@ shell.qml           # Main entry point, assembles the bar layout
 Theme.qml           # Singleton with colors, fonts, and theme settings
 qmldir              # QML module definition for Theme singleton
 components/         # Modular widget components
-  ├── DropdownWidget.qml   # Base component for click-to-open dropdown widgets
+  ├── DropdownWidget.qml   # Base component for click-to-open dropdown widgets (notch design)
   ├── WeatherStatItem.qml  # Reusable stat row for weather popup
   ├── WorkspaceBar.qml     # Hyprland workspaces with app icons (pill-shaped)
   ├── WindowInfo.qml       # Current window title
-  ├── CenterInfo.qml       # Date/weather with hover popup showing detailed forecast
+  ├── CenterInfo.qml       # Date/DND/weather with click popup showing detailed forecast
   ├── SystemStats.qml      # CPU, memory, disk, volume, battery
   ├── Clock.qml            # Time display
-  ├── WifiWidget.qml       # WiFi status with dropdown (extends DropdownWidget)
+  ├── WifiWidget.qml       # WiFi status with network speeds (extends DropdownWidget)
   ├── BluetoothWidget.qml  # Bluetooth status with dropdown (extends DropdownWidget)
   ├── PowerProfileWidget.qml # Power profile selector (extends DropdownWidget)
+  ├── PowerWidget.qml      # Power menu: lock, logout, reboot, shutdown (extends DropdownWidget)
   ├── SlackWidget.qml      # Slack indicator, click to focus app
   ├── WhatsAppWidget.qml   # WhatsApp indicator, click to focus app
   └── Separator.qml        # Visual separator line

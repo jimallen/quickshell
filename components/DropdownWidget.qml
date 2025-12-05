@@ -16,6 +16,7 @@ Item {
     property int popupHeight: 150
     property int popupXOffset: 200
     property bool dropdownOpen: false
+    property string stemAlignment: "center"  // "left", "center", or "right"
     property alias popupContent: popupLoader.sourceComponent
 
     signal opened()
@@ -58,7 +59,16 @@ Item {
         id: popup
         visible: dropdownOpen
         anchor.window: barWindow
-        anchor.rect.x: root.x + iconContainer.x + iconContainer.width/2 - popupWidth/2
+        anchor.rect.x: {
+            var iconCenter = root.x + iconContainer.x + iconContainer.width/2
+            if (stemAlignment === "right") {
+                return iconCenter - popupWidth + cardRect.stemWidth/2 + 10
+            } else if (stemAlignment === "left") {
+                return iconCenter - cardRect.stemWidth/2 - 10
+            } else {
+                return iconCenter - popupWidth/2
+            }
+        }
         anchor.rect.y: 32
         implicitWidth: popupWidth
         implicitHeight: popupHeight
@@ -69,13 +79,17 @@ Item {
             id: cardRect
             anchors.fill: parent
 
-            property int stemWidth: iconContainer.width + 16
+            property int rawStemWidth: iconContainer.width + 16
+            property int stemWidth: Math.min(rawStemWidth, width - 60)  // ensure room for notch corners
             property int stemHeight: 12
             property int notchRadius: 10
             property int cardRadius: 12
 
+            onStemWidthChanged: requestPaint()
+
             onPaint: {
                 var ctx = getContext("2d")
+                ctx.reset()
                 ctx.fillStyle = Theme.colBg
 
                 var sw = stemWidth
@@ -84,7 +98,16 @@ Item {
                 var r = cardRadius
                 var w = width
                 var h = height
-                var cx = w / 2
+
+                // Calculate stem center based on alignment
+                var cx
+                if (root.stemAlignment === "right") {
+                    cx = w - sw/2 - 10
+                } else if (root.stemAlignment === "left") {
+                    cx = sw/2 + 10
+                } else {
+                    cx = w / 2
+                }
 
                 var stemLeft = cx - sw/2
                 var stemRight = cx + sw/2

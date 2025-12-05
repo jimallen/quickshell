@@ -40,19 +40,18 @@ ShellRoot {
             }
 
             implicitHeight: 34
-            color: "transparent"
+            color: Theme.colBg
 
             margins {
-                top: 3
+                top: 0
                 bottom: 0
-                left: 8
-                right: 8
+                left: 0
+                right: 0
             }
 
             Rectangle {
                 anchors.fill: parent
                 color: Theme.colBg
-                radius: 10
 
                 RowLayout {
                     anchors.fill: parent
@@ -126,8 +125,13 @@ ShellRoot {
                     Separator {}
 
                     // Clock
-                    Clock {
-                        Layout.rightMargin: 8
+                    Clock {}
+
+                    Separator {}
+
+                    // Power menu
+                    PowerWidget {
+                        barWindow: barWindow
                     }
 
                     // Right padding
