@@ -30,7 +30,11 @@ components/         # Modular widget components
   ├── WorkspaceBar.qml     # Hyprland workspaces with app icons (pill-shaped)
   ├── WindowInfo.qml       # Current window title
   ├── CenterInfo.qml       # Date/DND/weather with click popup showing detailed forecast
-  ├── SystemStats.qml      # CPU, memory, disk, volume, battery
+  ├── CpuWidget.qml        # CPU usage percentage
+  ├── MemoryWidget.qml     # Memory usage percentage
+  ├── DiskWidget.qml       # Disk usage percentage
+  ├── VolumeWidget.qml     # Volume with mute/sink detection (speaker/headphone/bluetooth/hdmi)
+  ├── BatteryWidget.qml    # Battery level with charging status
   ├── Clock.qml            # Time display
   ├── WifiWidget.qml       # WiFi status with network speeds (extends DropdownWidget)
   ├── BluetoothWidget.qml  # Bluetooth status with dropdown (extends DropdownWidget)
@@ -46,7 +50,9 @@ components/         # Modular widget components
 - **Theme.qml**: Singleton pragma provides `Theme.colBg`, `Theme.fontSize`, etc. to all components
 - **WorkspaceBar.qml**: Pill-shaped workspace indicators with numbers and deduplicated app icons (max 3). Hover effects and active state highlighting
 - **CenterInfo.qml**: DND toggle + date + weather. Click shows popup with notch design connecting to bar. Displays location, temperature, condition, feels-like, min/max, and hourly rain forecast bars. Weather icon/temp colored by temperature. Caches weather data for offline use.
-- **SystemStats.qml**: CPU, memory, disk, volume (with mute detection and audio sink icons for speaker/headphone/bluetooth/HDMI), battery
+- **CpuWidget.qml / MemoryWidget.qml / DiskWidget.qml**: Simple percentage displays with themed colors
+- **VolumeWidget.qml**: Volume with mute detection and audio sink icons (speaker/headphone/bluetooth/HDMI). Click opens pavucontrol
+- **BatteryWidget.qml**: Battery level with charging status and tiered icons
 - **WifiWidget.qml**: WiFi status with network speed display (upload/download), dropdown for network selection
 - **BluetoothWidget.qml**: Bluetooth status with dropdown. Icon turns green when device connected
 - **Widget components**: Each has its own Process components for data fetching and PopupWindow for dropdowns

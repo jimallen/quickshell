@@ -100,9 +100,33 @@ ShellRoot {
 
                     Separator {}
 
-                    // System stats (CPU, Memory, Disk, Volume, Battery)
-                    SystemStats {
-                        Layout.preferredHeight: parent.height
+                    // System stats
+                    CpuWidget {
+                        Layout.rightMargin: 8
+                    }
+
+                    Separator {}
+
+                    MemoryWidget {
+                        Layout.rightMargin: 8
+                    }
+
+                    Separator {}
+
+                    DiskWidget {
+                        Layout.rightMargin: 8
+                    }
+
+                    Separator {}
+
+                    VolumeWidget {
+                        Layout.rightMargin: 8
+                    }
+
+                    Separator {}
+
+                    BatteryWidget {
+                        Layout.rightMargin: 8
                     }
 
                     Separator {}
