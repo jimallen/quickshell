@@ -20,6 +20,19 @@ ShellRoot {
             property var modelData
             screen: modelData
 
+            signal closeAllPopups()
+
+            // Listen to Hyprland events to close popups when focus changes
+            Connections {
+                target: Hyprland
+                function onRawEvent(event) {
+                    // Close popups when active window changes or layer closes
+                    if (event.name === "activewindow" || event.name === "activewindowv2") {
+                        barWindow.closeAllPopups()
+                    }
+                }
+            }
+
             anchors {
                 top: true
                 left: true
@@ -121,6 +134,11 @@ ShellRoot {
                         barWindow: barWindow
                     }
 
+                    // Power profile
+                    PowerProfileWidget {
+                        barWindow: barWindow
+                    }
+
                     Separator {}
 
                     // Clock
@@ -130,6 +148,16 @@ ShellRoot {
 
                     // Right padding
                     Item { width: 8 }
+                }
+
+                // Click overlay to close popups - sits on top but propagates clicks
+                MouseArea {
+                    anchors.fill: parent
+                    propagateComposedEvents: true
+                    onClicked: (mouse) => {
+                        barWindow.closeAllPopups()
+                        mouse.accepted = false
+                    }
                 }
             }
         }

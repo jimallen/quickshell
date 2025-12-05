@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Wayland
+import Quickshell.Hyprland
 import Quickshell.Io
 import ".."
 
@@ -12,6 +13,13 @@ Item {
     Layout.rightMargin: 8
 
     required property var barWindow
+
+    Connections {
+        target: barWindow
+        function onCloseAllPopups() {
+            whatsappDropdownOpen = false
+        }
+    }
 
     property bool whatsappRunning: false
     property int whatsappUnread: 0
@@ -111,6 +119,14 @@ Item {
         hoverEnabled: true
         cursorShape: Qt.PointingHandCursor
         onClicked: whatsappDropdownOpen = !whatsappDropdownOpen
+    }
+
+    // Focus grab to close popup when clicking outside
+    HyprlandFocusGrab {
+        id: whatsappFocusGrab
+        windows: [whatsappPopup]
+        active: whatsappDropdownOpen
+        onCleared: whatsappDropdownOpen = false
     }
 
     // WhatsApp dropdown popup

@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Wayland
+import Quickshell.Hyprland
 import Quickshell.Io
 import ".."
 
@@ -12,6 +13,13 @@ Item {
     Layout.rightMargin: 8
 
     required property var barWindow
+
+    Connections {
+        target: barWindow
+        function onCloseAllPopups() {
+            btDropdownOpen = false
+        }
+    }
 
     property bool btPowered: false
     property bool btConnected: false
@@ -151,6 +159,14 @@ Item {
                 btDevicesProc.running = true
             }
         }
+    }
+
+    // Focus grab to close popup when clicking outside
+    HyprlandFocusGrab {
+        id: btFocusGrab
+        windows: [btPopup]
+        active: btDropdownOpen
+        onCleared: btDropdownOpen = false
     }
 
     // Bluetooth dropdown popup

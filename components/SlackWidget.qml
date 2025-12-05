@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Wayland
+import Quickshell.Hyprland
 import Quickshell.Io
 import ".."
 
@@ -12,6 +13,13 @@ Item {
     Layout.rightMargin: 8
 
     required property var barWindow
+
+    Connections {
+        target: barWindow
+        function onCloseAllPopups() {
+            slackDropdownOpen = false
+        }
+    }
 
     property bool slackRunning: false
     property int slackUnread: 0
@@ -111,6 +119,14 @@ Item {
         hoverEnabled: true
         cursorShape: Qt.PointingHandCursor
         onClicked: slackDropdownOpen = !slackDropdownOpen
+    }
+
+    // Focus grab to close popup when clicking outside
+    HyprlandFocusGrab {
+        id: slackFocusGrab
+        windows: [slackPopup]
+        active: slackDropdownOpen
+        onCleared: slackDropdownOpen = false
     }
 
     // Slack dropdown popup

@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Wayland
+import Quickshell.Hyprland
 import Quickshell.Io
 import ".."
 
@@ -12,6 +13,13 @@ Item {
     Layout.rightMargin: 8
 
     required property var barWindow
+
+    Connections {
+        target: barWindow
+        function onCloseAllPopups() {
+            wifiDropdownOpen = false
+        }
+    }
 
     property string wifiSSID: ""
     property int wifiSignal: 0
@@ -114,6 +122,14 @@ Item {
                 wifiScanProc.running = true
             }
         }
+    }
+
+    // Focus grab to close popup when clicking outside
+    HyprlandFocusGrab {
+        id: wifiFocusGrab
+        windows: [wifiPopup]
+        active: wifiDropdownOpen
+        onCleared: wifiDropdownOpen = false
     }
 
     // WiFi dropdown popup

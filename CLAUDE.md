@@ -30,11 +30,12 @@ components/         # Modular widget components
   ├── CenterInfo.qml     # Date and weather display
   ├── SystemStats.qml    # CPU, memory, disk, volume, battery
   ├── Clock.qml          # Time display
-  ├── WifiWidget.qml     # WiFi status with dropdown
-  ├── BluetoothWidget.qml # Bluetooth status with dropdown
-  ├── SlackWidget.qml    # Slack notification indicator
-  ├── WhatsAppWidget.qml # WhatsApp notification indicator
-  └── Separator.qml      # Visual separator line
+  ├── WifiWidget.qml        # WiFi status with dropdown
+  ├── BluetoothWidget.qml   # Bluetooth status with dropdown
+  ├── PowerProfileWidget.qml # Power profile selector with dropdown
+  ├── SlackWidget.qml       # Slack notification indicator with dropdown
+  ├── WhatsAppWidget.qml    # WhatsApp notification indicator with dropdown
+  └── Separator.qml         # Visual separator line
 ```
 
 ### Key Components
@@ -48,12 +49,22 @@ components/         # Modular widget components
 - **Process + SplitParser**: All system data comes from shell commands via `Process` components with `SplitParser` for output
 - **Theme singleton**: Components access theme via `import ".."` then use `Theme.colFg`, `Theme.fontSize`, etc.
 - **PopupWindows**: Dropdowns use `PopupWindow` with `visible` bound to `*DropdownOpen` properties
+- **HyprlandFocusGrab**: Used to close popups when clicking outside. Requires `import Quickshell.Hyprland`. Example:
+  ```qml
+  HyprlandFocusGrab {
+      id: myFocusGrab
+      windows: [myPopup]
+      active: myDropdownOpen
+      onCleared: myDropdownOpen = false
+  }
+  ```
 - **Nerd Font Icons**: Uses Material Design Icons range (nf-md-*) which render correctly in Qt. Other ranges may not work.
 
 ### External Dependencies
 
 - `nmcli` for WiFi scanning/connecting
 - `bluetoothctl` for Bluetooth management
+- `powerprofilesctl` for power profile management
 - `dunstctl` for notification counts (Slack/WhatsApp unread)
 - `hyprctl` for workspace/window data
 - `jq` for JSON parsing
@@ -65,4 +76,8 @@ components/         # Modular widget components
 2. Add Process components for data fetching with SplitParser
 3. Use `import ".."` to access Theme singleton
 4. Add the component to shell.qml's RowLayout
-5. For dropdowns: Add PopupWindow and wire up a `*DropdownOpen` property
+5. For dropdowns:
+   - Add a `*DropdownOpen` property
+   - Add PopupWindow with `visible` bound to the dropdown property
+   - Add HyprlandFocusGrab (requires `import Quickshell.Hyprland`) to close popup on outside click
+   - Add Connections to barWindow's `closeAllPopups` signal to close when clicking on the bar
