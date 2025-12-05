@@ -113,11 +113,11 @@ ShellRoot {
 
                     Separator {}
 
-                    DiskWidget {
-                        Layout.rightMargin: 8
-                    }
+                    //DiskWidget {
+                    //    Layout.rightMargin: 8
+                    //}
 
-                    Separator {}
+                    //Separator {}
 
                     VolumeWidget {
                         Layout.rightMargin: 8
