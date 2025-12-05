@@ -79,6 +79,7 @@ ShellRoot {
                     // Window info (layout + title)
                     WindowInfo {
                         Layout.preferredHeight: parent.height
+                        Layout.preferredWidth: 300
                     }
 
                     // Left spacer

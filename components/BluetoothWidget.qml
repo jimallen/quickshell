@@ -134,7 +134,8 @@ DropdownWidget {
         anchors.verticalCenter: parent.verticalCenter
         text: !btPowered ? "󰂲" :
               btConnected ? "󰂱" : "󰂯"
-        color: btPowered ? Theme.colBluetooth : Theme.colMuted
+        color: !btPowered ? Theme.colMuted :
+               btConnected ? "#50fa7b" : Theme.colBluetooth
         font.pixelSize: Theme.fontSize + 4
         font.family: Theme.fontFamily
         font.bold: true

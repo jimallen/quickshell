@@ -44,7 +44,10 @@ components/         # Modular widget components
 
 - **Theme.qml**: Singleton pragma provides `Theme.colBg`, `Theme.fontSize`, etc. to all components
 - **WorkspaceBar.qml**: Pill-shaped workspace indicators with numbers and deduplicated app icons (max 3). Hover effects and active state highlighting
-- **CenterInfo.qml**: Date and weather text; hover shows popup with location, temperature, condition, feels-like, min/max, wind, humidity, visibility, AQI (color-coded), and hourly rain forecast bars
+- **CenterInfo.qml**: DND toggle + date + weather. Click shows popup with location, temperature, condition, feels-like, min/max, wind, humidity, visibility, AQI (color-coded), and hourly rain forecast bars. Weather icon/temp colored by temperature. Caches weather data for offline use.
+- **SystemStats.qml**: CPU, memory, disk, volume (with mute detection and audio sink icons for speaker/headphone/bluetooth/HDMI), battery
+- **WifiWidget.qml**: WiFi status with network speed display (upload/download), dropdown for network selection
+- **BluetoothWidget.qml**: Bluetooth status with dropdown. Icon turns green when device connected
 - **Widget components**: Each has its own Process components for data fetching and PopupWindow for dropdowns
 
 ### Key Patterns
@@ -68,7 +71,8 @@ components/         # Modular widget components
 - `nmcli` for WiFi scanning/connecting
 - `bluetoothctl` for Bluetooth management
 - `powerprofilesctl` for power profile management
-- `dunstctl` for notification counts (Slack/WhatsApp unread)
+- `swaync-client` for DND (Do Not Disturb) toggle
+- `wpctl` / `pactl` for volume control and audio sink detection
 - `hyprctl` for workspace/window data
 - `jq` for JSON parsing
 - `~/.config/hypr/UserScripts/Weather.py` for weather data (outputs JSON with `text` field)

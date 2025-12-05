@@ -15,6 +15,18 @@ DropdownWidget {
     property bool wifiConnected: false
     property var wifiNetworks: []
 
+    // Network speed tracking
+    property real downloadSpeed: 0  // bytes per second
+    property real uploadSpeed: 0
+    property real lastRxBytes: 0
+    property real lastTxBytes: 0
+
+    function formatSpeed(bytesPerSec) {
+        if (bytesPerSec < 1024) return bytesPerSec.toFixed(0) + " B/s"
+        if (bytesPerSec < 1024 * 1024) return (bytesPerSec / 1024).toFixed(0) + " K/s"
+        return (bytesPerSec / 1024 / 1024).toFixed(1) + " M/s"
+    }
+
     onOpened: wifiScanProc.running = true
 
     // WiFi current connection
@@ -80,27 +92,77 @@ DropdownWidget {
         command: ["nmcli", "device", "wifi", "connect", targetSSID]
     }
 
+    // Network speed process
+    Process {
+        id: netSpeedProc
+        command: ["sh", "-c", "cat /proc/net/dev | grep -E 'wl|en' | head -1"]
+        stdout: SplitParser {
+            onRead: data => {
+                if (!data) return
+                var parts = data.trim().split(/\s+/)
+                if (parts.length >= 10) {
+                    var rxBytes = parseFloat(parts[1]) || 0
+                    var txBytes = parseFloat(parts[9]) || 0
+
+                    if (wifiWidget.lastRxBytes > 0) {
+                        wifiWidget.downloadSpeed = rxBytes - wifiWidget.lastRxBytes
+                        wifiWidget.uploadSpeed = txBytes - wifiWidget.lastTxBytes
+                    }
+                    wifiWidget.lastRxBytes = rxBytes
+                    wifiWidget.lastTxBytes = txBytes
+                }
+            }
+        }
+        Component.onCompleted: running = true
+    }
+
     // Update timer
     Timer {
-        interval: 2000
+        interval: 1000
         running: true
         repeat: true
-        onTriggered: wifiCurrentProc.running = true
+        onTriggered: {
+            wifiCurrentProc.running = true
+            netSpeedProc.running = true
+        }
     }
 
     // Icon content
-    Text {
-        id: wifiText
+    Row {
         anchors.verticalCenter: parent.verticalCenter
-        text: !wifiConnected ? "󰤭" :
-              wifiSignal >= 80 ? "󰤨" :
-              wifiSignal >= 60 ? "󰤥" :
-              wifiSignal >= 40 ? "󰤢" :
-              wifiSignal >= 20 ? "󰤟" : "󰤯"
-        color: wifiConnected ? Theme.colNetwork : Theme.colMuted
-        font.pixelSize: Theme.fontSize + 4
-        font.family: Theme.fontFamily
-        font.bold: true
+        spacing: 4
+
+        Text {
+            id: wifiText
+            anchors.verticalCenter: parent.verticalCenter
+            text: !wifiConnected ? "󰤭" :
+                  wifiSignal >= 80 ? "󰤨" :
+                  wifiSignal >= 60 ? "󰤥" :
+                  wifiSignal >= 40 ? "󰤢" :
+                  wifiSignal >= 20 ? "󰤟" : "󰤯"
+            color: wifiConnected ? Theme.colNetwork : Theme.colMuted
+            font.pixelSize: Theme.fontSize + 4
+            font.family: Theme.fontFamily
+            font.bold: true
+        }
+
+        Text {
+            anchors.verticalCenter: parent.verticalCenter
+            visible: wifiConnected
+            text: " " + formatSpeed(downloadSpeed) + "  " + formatSpeed(uploadSpeed)
+            color: Theme.colNetwork
+            font.pixelSize: Theme.fontSize - 2
+            font.family: Theme.fontFamily
+            width: 120
+            horizontalAlignment: Text.AlignLeft
+        }
+
+        Rectangle {
+            width: 1
+            height: 16
+            anchors.verticalCenter: parent.verticalCenter
+            color: Theme.colMuted
+        }
     }
 
     // Popup content

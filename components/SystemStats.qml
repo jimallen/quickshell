@@ -11,6 +11,8 @@ RowLayout {
     property int memUsage: 0
     property int diskUsage: 0
     property int volumeLevel: 0
+    property bool volumeMuted: false
+    property string audioSink: "speaker"  // speaker, headphone, hdmi, bluetooth
     property int batteryLevel: 0
     property bool batteryCharging: false
 
@@ -93,6 +95,29 @@ RowLayout {
                 if (match) {
                     systemStats.volumeLevel = Math.round(parseFloat(match[1]) * 100)
                 }
+                systemStats.volumeMuted = data.includes("[MUTED]")
+            }
+        }
+        Component.onCompleted: running = true
+    }
+
+    // Audio sink type detection
+    Process {
+        id: sinkProc
+        command: ["pactl", "get-default-sink"]
+        stdout: SplitParser {
+            onRead: data => {
+                if (!data) return
+                var sink = data.toLowerCase()
+                if (sink.includes("headphone") || sink.includes("headset")) {
+                    systemStats.audioSink = "headphone"
+                } else if (sink.includes("hdmi") || sink.includes("displayport")) {
+                    systemStats.audioSink = "hdmi"
+                } else if (sink.includes("bluez") || sink.includes("bluetooth")) {
+                    systemStats.audioSink = "bluetooth"
+                } else {
+                    systemStats.audioSink = "speaker"
+                }
             }
         }
         Component.onCompleted: running = true
@@ -140,6 +165,7 @@ RowLayout {
             memProc.running = true
             diskProc.running = true
             volProc.running = true
+            sinkProc.running = true
             batteryProc.running = true
             batteryStatusProc.running = true
         }
@@ -205,11 +231,21 @@ RowLayout {
     // Volume
     Text {
         id: volumeText
-        text: volumeLevel === 0 ? "󰖁" :
-              volumeLevel < 30 ? " " + volumeLevel + "%" :
-              volumeLevel < 70 ? "󰕾 " + volumeLevel + "%" :
-              " " + volumeLevel + "%"
-        color: Theme.colVol
+        property string volumeIcon: {
+            if (volumeMuted) return "󰖁"
+            if (audioSink === "headphone") return ""
+            if (audioSink === "bluetooth") return "󰂰"
+            if (audioSink === "hdmi") return "󰡁"
+            // Speaker icons based on volume
+            if (volumeLevel < 30) return ""
+            if (volumeLevel < 70) return "󰕾"
+            return ""
+        }
+        text: volumeIcon + " " + volumeLevel + "%"
+        color: volumeMuted ? Theme.colMuted :
+               audioSink === "headphone" ? "#f1fa8c" :
+               audioSink === "bluetooth" ? Theme.colBluetooth :
+               Theme.colVol
         font.pixelSize: Theme.fontSize
         font.family: Theme.fontFamily
         font.bold: true
