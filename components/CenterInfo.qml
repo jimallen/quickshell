@@ -91,20 +91,25 @@ Item {
             centerInfo.weatherText = json.text || ""
             centerInfo.weatherCondition = json.alt || ""
 
+            // Helper to strip HTML tags
+            function stripHtml(str) {
+                return str.replace(/<[^>]*>/g, '').trim()
+            }
+
             // Parse tooltip for detailed data
             if (json.tooltip) {
                 var tooltip = json.tooltip
                 // Extract location (first line, inside <b> tags)
                 var locMatch = tooltip.match(/<b>([^<]+)<\/b>/)
-                if (locMatch) centerInfo.weatherLocation = locMatch[1]
+                if (locMatch) centerInfo.weatherLocation = stripHtml(locMatch[1])
 
                 // Extract feels like
-                var feelsMatch = tooltip.match(/Feels like ([^<]+)/)
-                if (feelsMatch) centerInfo.weatherFeelsLike = feelsMatch[1]
+                var feelsMatch = tooltip.match(/Feels like ([^<\n]+)/)
+                if (feelsMatch) centerInfo.weatherFeelsLike = stripHtml(feelsMatch[1])
 
                 // Extract icon (big text after condition)
                 var iconMatch = tooltip.match(/<big>([^<]+)<\/big>/)
-                if (iconMatch) centerInfo.weatherIcon = iconMatch[1].trim()
+                if (iconMatch) centerInfo.weatherIcon = stripHtml(iconMatch[1])
 
                 // Extract min/max temps (line with two temps)
                 var tempMatch = tooltip.match(/([^\t]+)\t\t([^\n<]+)/)
@@ -116,8 +121,8 @@ Item {
                         // Match pattern like "  1°		  3°"
                         var minMaxMatch = line.match(/\s*([^\t]+)\t\t\s*([^\t\n]+)/)
                         if (minMaxMatch && minMaxMatch[1].includes('°') && minMaxMatch[2].includes('°')) {
-                            centerInfo.weatherMinTemp = minMaxMatch[1].trim()
-                            centerInfo.weatherMaxTemp = minMaxMatch[2].trim()
+                            centerInfo.weatherMinTemp = stripHtml(minMaxMatch[1])
+                            centerInfo.weatherMaxTemp = stripHtml(minMaxMatch[2])
                         }
                         // Wind and humidity line
                         if (line.includes('km/h') && line.includes('%')) {
@@ -185,6 +190,7 @@ Item {
             font.pixelSize: Theme.fontSize
             font.family: Theme.fontFamily
             font.bold: true
+            anchors.verticalCenter: parent.verticalCenter
 
             MouseArea {
                 anchors.fill: parent
@@ -199,42 +205,64 @@ Item {
             font.pixelSize: Theme.fontSize
             font.family: Theme.fontFamily
             font.bold: true
+            anchors.verticalCenter: parent.verticalCenter
         }
 
+        // Separator with spacing
         Text {
             visible: weatherText !== ""
-            text: "  |  "
+            text: " |"
             color: Theme.colMuted
             font.pixelSize: Theme.fontSize
             font.family: Theme.fontFamily
-            font.bold: true
+            anchors.verticalCenter: parent.verticalCenter
         }
 
-        Text {
-            visible: centerText.barIcon !== ""
-            text: centerText.barIcon + " "
-            color: getTempColor(weatherText)
-            font.pixelSize: Theme.fontSize
-            font.family: Theme.fontFamily
-            font.bold: true
-        }
+        // Weather pill with matching background (only when open)
+        Rectangle {
+            id: weatherPill
+            visible: weatherText !== ""
+            color: popupVisible ? Theme.colBg : "transparent"
+            radius: 8
+            height: 26
+            width: weatherRow.implicitWidth + 16
+            anchors.verticalCenter: parent.verticalCenter
 
-        Text {
-            visible: centerText.barTemp !== ""
-            text: centerText.barTemp
-            color: getTempColor(weatherText)
-            font.pixelSize: Theme.fontSize
-            font.family: Theme.fontFamily
-            font.bold: true
-        }
+            Row {
+                id: weatherRow
+                anchors.centerIn: parent
+                spacing: 0
 
-        Text {
-            visible: centerText.barLocation !== ""
-            text: " " + centerText.barLocation
-            color: Theme.colFg
-            font.pixelSize: Theme.fontSize
-            font.family: Theme.fontFamily
-            font.bold: true
+                Text {
+                    visible: centerText.barIcon !== ""
+                    text: centerText.barIcon + " "
+                    color: getTempColor(weatherText)
+                    font.pixelSize: Theme.fontSize
+                    font.family: Theme.fontFamily
+                    font.bold: true
+                    anchors.verticalCenter: parent.verticalCenter
+                }
+
+                Text {
+                    visible: centerText.barTemp !== ""
+                    text: centerText.barTemp
+                    color: getTempColor(weatherText)
+                    font.pixelSize: Theme.fontSize
+                    font.family: Theme.fontFamily
+                    font.bold: true
+                    anchors.verticalCenter: parent.verticalCenter
+                }
+
+                Text {
+                    visible: centerText.barLocation !== ""
+                    text: " " + centerText.barLocation
+                    color: Theme.colFg
+                    font.pixelSize: Theme.fontSize
+                    font.family: Theme.fontFamily
+                    font.bold: true
+                    anchors.verticalCenter: parent.verticalCenter
+                }
+            }
         }
     }
 
@@ -341,214 +369,216 @@ Item {
         id: weatherPopup
         visible: centerInfo.popupVisible && centerInfo.weatherText
         anchor.window: barWindow
-        anchor.rect.x: (barWindow.width - 280) / 2
-        anchor.rect.y: 40
+        anchor.rect.x: centerInfo.x + centerText.x + weatherPill.x + weatherPill.width/2 - width/2
+        anchor.rect.y: 32
         implicitWidth: 280
-        implicitHeight: contentColumn.implicitHeight + 32
+        implicitHeight: contentColumn.implicitHeight + 12 + 32
         color: "transparent"
 
-        Rectangle {
+        // Main card with notch corners
+        Canvas {
+            id: cardRect
             anchors.fill: parent
-            color: Theme.colBg
-            radius: 12
-            border.color: Qt.rgba(Theme.colMuted.r, Theme.colMuted.g, Theme.colMuted.b, 0.5)
-            border.width: 1
 
-            // Subtle gradient overlay
-            Rectangle {
-                anchors.fill: parent
-                radius: 12
-                gradient: Gradient {
-                    GradientStop { position: 0.0; color: Qt.rgba(255, 255, 255, 0.03) }
-                    GradientStop { position: 1.0; color: "transparent" }
+            property int stemWidth: weatherPill.width  // match weather widget width
+            property int stemHeight: 12     // height of narrow top section
+            property int notchRadius: 10    // radius of the concave notch curves
+            property int cardRadius: 12     // radius of main card corners
+
+            onPaint: {
+                var ctx = getContext("2d")
+                ctx.fillStyle = Theme.colBg
+
+                var sw = stemWidth
+                var sh = stemHeight
+                var nr = notchRadius
+                var r = cardRadius
+                var w = width
+                var h = height
+                var cx = w / 2
+
+                // Calculate stem edges
+                var stemLeft = cx - sw/2
+                var stemRight = cx + sw/2
+
+                ctx.beginPath()
+                // Start at top-left of stem
+                ctx.moveTo(stemLeft + r, 0)
+                // Top edge of stem
+                ctx.lineTo(stemRight - r, 0)
+                // Top-right corner of stem
+                ctx.arcTo(stemRight, 0, stemRight, r, r)
+                // Right edge of stem down
+                ctx.lineTo(stemRight, sh - nr)
+                // Notch curve (concave) - right side
+                ctx.arcTo(stemRight, sh, stemRight + nr, sh, nr)
+                // Top edge to right card corner
+                ctx.lineTo(w - r, sh)
+                // Top-right corner of card
+                ctx.arcTo(w, sh, w, sh + r, r)
+                // Right edge of card
+                ctx.lineTo(w, h - r)
+                // Bottom-right corner
+                ctx.arcTo(w, h, w - r, h, r)
+                // Bottom edge
+                ctx.lineTo(r, h)
+                // Bottom-left corner
+                ctx.arcTo(0, h, 0, h - r, r)
+                // Left edge of card
+                ctx.lineTo(0, sh + r)
+                // Top-left corner of card
+                ctx.arcTo(0, sh, r, sh, r)
+                // Top edge to left notch
+                ctx.lineTo(stemLeft - nr, sh)
+                // Notch curve (concave) - left side
+                ctx.arcTo(stemLeft, sh, stemLeft, sh - nr, nr)
+                // Left edge of stem up
+                ctx.lineTo(stemLeft, r)
+                // Top-left corner of stem
+                ctx.arcTo(stemLeft, 0, stemLeft + r, 0, r)
+                ctx.closePath()
+                ctx.fill()
+            }
+        }
+
+        MouseArea {
+            id: popupMouse
+            anchors.fill: parent
+        }
+
+        Column {
+            id: contentColumn
+            anchors.fill: cardRect
+            anchors.topMargin: cardRect.stemHeight + 16
+            anchors.leftMargin: 16
+            anchors.rightMargin: 16
+            anchors.bottomMargin: 16
+            spacing: 8
+
+            // Large icon centered
+            Text {
+                anchors.horizontalCenter: parent.horizontalCenter
+                text: centerInfo.weatherIcon || "󰖐"
+                color: getConditionColor(centerInfo.weatherCondition)
+                font.pixelSize: 56
+                font.family: Theme.fontFamily
+            }
+
+            // Temperature large
+            Text {
+                anchors.horizontalCenter: parent.horizontalCenter
+                property string temp: {
+                    var match = centerInfo.weatherText.match(/-?\d+/)
+                    return match ? match[0] + "°C" : ""
+                }
+                text: temp
+                color: getTempColor(centerInfo.weatherText)
+                font.pixelSize: 32
+                font.family: Theme.fontFamily
+                font.bold: true
+            }
+
+            // Condition
+            Text {
+                anchors.horizontalCenter: parent.horizontalCenter
+                text: centerInfo.weatherCondition
+                color: Theme.colMuted
+                font.pixelSize: Theme.fontSize
+                font.family: Theme.fontFamily
+            }
+
+            // Location
+            Text {
+                anchors.horizontalCenter: parent.horizontalCenter
+                width: parent.width
+                horizontalAlignment: Text.AlignHCenter
+                text: centerInfo.weatherLocation || ""
+                color: Qt.rgba(Theme.colMuted.r, Theme.colMuted.g, Theme.colMuted.b, 0.6)
+                font.pixelSize: Theme.fontSize - 2
+                font.family: Theme.fontFamily
+                elide: Text.ElideRight
+                visible: centerInfo.weatherLocation !== ""
+            }
+
+            // Spacer
+            Item { width: 1; height: 4 }
+
+            // Min/Max row
+            Row {
+                anchors.horizontalCenter: parent.horizontalCenter
+                spacing: 16
+                visible: centerInfo.weatherMinTemp !== "" || centerInfo.weatherMaxTemp !== ""
+
+                Text {
+                    text: " " + centerInfo.weatherMinTemp
+                    color: getTempColor(centerInfo.weatherMinTemp)
+                    font.pixelSize: Theme.fontSize
+                    font.family: Theme.fontFamily
+                }
+                Text {
+                    text: " " + centerInfo.weatherMaxTemp
+                    color: getTempColor(centerInfo.weatherMaxTemp)
+                    font.pixelSize: Theme.fontSize
+                    font.family: Theme.fontFamily
                 }
             }
 
-            MouseArea {
-                id: popupMouse
-                anchors.fill: parent
+            // Feels like
+            Text {
+                anchors.horizontalCenter: parent.horizontalCenter
+                text: centerInfo.weatherFeelsLike ? "Feels " + centerInfo.weatherFeelsLike : ""
+                color: Theme.colMuted
+                font.pixelSize: Theme.fontSize - 2
+                font.family: Theme.fontFamily
+                visible: centerInfo.weatherFeelsLike !== ""
             }
 
+            // Hourly rain forecast
             Column {
-                id: contentColumn
-                anchors.fill: parent
-                anchors.margins: 16
-                spacing: 12
+                width: parent.width
+                spacing: 6
+                visible: centerInfo.hourlyRain.length > 0
 
-                // Header: Location
+                // Spacer
+                Item { width: 1; height: 4 }
+
                 Text {
-                    text: centerInfo.weatherLocation || "Weather"
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    text: " Rain"
                     color: Theme.colMuted
                     font.pixelSize: Theme.fontSize - 2
                     font.family: Theme.fontFamily
-                    width: parent.width
-                    elide: Text.ElideRight
                 }
 
-                // Main weather display
                 RowLayout {
                     width: parent.width
-                    spacing: 16
+                    spacing: 4
 
-                    // Large icon
-                    Text {
-                        text: centerInfo.weatherIcon || ""
-                        color: getConditionColor(centerInfo.weatherCondition)
-                        font.pixelSize: 48
-                        font.family: Theme.fontFamily
-                        Layout.alignment: Qt.AlignVCenter
-                    }
+                    Repeater {
+                        model: centerInfo.hourlyRain
 
-                    // Temp and condition
-                    Column {
-                        Layout.fillWidth: true
-                        spacing: 2
-
-                        // Extract just the temperature from weatherText
-                        Text {
-                            property string temp: {
-                                var match = centerInfo.weatherText.match(/-?\d+/)
-                                return match ? match[0] + "°" : centerInfo.weatherText
-                            }
-                            text: temp
-                            color: getTempColor(centerInfo.weatherText)
-                            font.pixelSize: 36
-                            font.family: Theme.fontFamily
-                            font.bold: true
-                        }
-
-                        Text {
-                            text: centerInfo.weatherCondition
-                            color: Theme.colMuted
-                            font.pixelSize: Theme.fontSize
-                            font.family: Theme.fontFamily
-                        }
-
-                        Text {
-                            text: centerInfo.weatherFeelsLike ? "Feels " + centerInfo.weatherFeelsLike : ""
-                            color: Qt.rgba(Theme.colMuted.r, Theme.colMuted.g, Theme.colMuted.b, 0.7)
-                            font.pixelSize: Theme.fontSize - 2
-                            font.family: Theme.fontFamily
-                            visible: centerInfo.weatherFeelsLike !== ""
-                        }
-                    }
-                }
-
-                // Divider
-                Rectangle {
-                    width: parent.width
-                    height: 1
-                    color: Qt.rgba(Theme.colMuted.r, Theme.colMuted.g, Theme.colMuted.b, 0.3)
-                }
-
-                // Stats grid
-                GridLayout {
-                    width: parent.width
-                    columns: 2
-                    rowSpacing: 8
-                    columnSpacing: 16
-
-                    // Min/Max
-                    WeatherStatItem {
-                        icon: ""
-                        label: "Low"
-                        value: centerInfo.weatherMinTemp
-                        valueColor: getTempColor(centerInfo.weatherMinTemp)
-                        visible: centerInfo.weatherMinTemp !== ""
-                    }
-                    WeatherStatItem {
-                        icon: ""
-                        label: "High"
-                        value: centerInfo.weatherMaxTemp
-                        valueColor: getTempColor(centerInfo.weatherMaxTemp)
-                        visible: centerInfo.weatherMaxTemp !== ""
-                    }
-
-                    // Wind and Humidity
-                    WeatherStatItem {
-                        icon: ""
-                        label: "Wind"
-                        value: centerInfo.weatherWind
-                        visible: centerInfo.weatherWind !== ""
-                    }
-                    WeatherStatItem {
-                        icon: ""
-                        label: "Humidity"
-                        value: centerInfo.weatherHumidity
-                        visible: centerInfo.weatherHumidity !== ""
-                    }
-
-                    // Visibility and AQI
-                    WeatherStatItem {
-                        icon: "󰈈"
-                        label: "Visibility"
-                        value: centerInfo.weatherVisibility
-                        visible: centerInfo.weatherVisibility !== ""
-                    }
-                    WeatherStatItem {
-                        icon: "󰵃"
-                        label: "AQI"
-                        value: centerInfo.weatherAqi
-                        valueColor: {
-                            var aqi = parseInt(centerInfo.weatherAqi)
-                            if (aqi <= 50) return "#50fa7b"
-                            if (aqi <= 100) return "#f1fa8c"
-                            if (aqi <= 150) return "#ffb86c"
-                            return "#ff5555"
-                        }
-                        visible: centerInfo.weatherAqi !== ""
-                    }
-                }
-
-                // Hourly rain forecast
-                Column {
-                    width: parent.width
-                    spacing: 6
-                    visible: centerInfo.hourlyRain.length > 0
-
-                    Rectangle {
-                        width: parent.width
-                        height: 1
-                        color: Qt.rgba(Theme.colMuted.r, Theme.colMuted.g, Theme.colMuted.b, 0.3)
-                    }
-
-                    Text {
-                        text: " Rain Chance (hourly)"
-                        color: Theme.colMuted
-                        font.pixelSize: Theme.fontSize - 2
-                        font.family: Theme.fontFamily
-                    }
-
-                    RowLayout {
-                        width: parent.width
-                        spacing: 4
-
-                        Repeater {
-                            model: centerInfo.hourlyRain
+                        Rectangle {
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 28
+                            color: Qt.rgba(Theme.colNetwork.r, Theme.colNetwork.g, Theme.colNetwork.b, 0.15)
+                            radius: 4
 
                             Rectangle {
-                                Layout.fillWidth: true
-                                Layout.preferredHeight: 24
-                                color: Qt.rgba(Theme.colNetwork.r, Theme.colNetwork.g, Theme.colNetwork.b, 0.1)
+                                anchors.bottom: parent.bottom
+                                anchors.left: parent.left
+                                anchors.right: parent.right
+                                height: parent.height * (modelData / 100)
+                                color: Qt.rgba(Theme.colNetwork.r, Theme.colNetwork.g, Theme.colNetwork.b, 0.4 + (modelData / 200))
                                 radius: 4
+                            }
 
-                                Rectangle {
-                                    anchors.bottom: parent.bottom
-                                    anchors.left: parent.left
-                                    anchors.right: parent.right
-                                    height: parent.height * (modelData / 100)
-                                    color: Qt.rgba(Theme.colNetwork.r, Theme.colNetwork.g, Theme.colNetwork.b, 0.4 + (modelData / 200))
-                                    radius: 4
-                                }
-
-                                Text {
-                                    anchors.centerIn: parent
-                                    text: modelData + "%"
-                                    color: Theme.colFg
-                                    font.pixelSize: 9
-                                    font.family: Theme.fontFamily
-                                    font.bold: true
-                                }
+                            Text {
+                                anchors.centerIn: parent
+                                text: modelData + "%"
+                                color: Theme.colFg
+                                font.pixelSize: 9
+                                font.family: Theme.fontFamily
+                                font.bold: true
                             }
                         }
                     }

@@ -44,7 +44,7 @@ components/         # Modular widget components
 
 - **Theme.qml**: Singleton pragma provides `Theme.colBg`, `Theme.fontSize`, etc. to all components
 - **WorkspaceBar.qml**: Pill-shaped workspace indicators with numbers and deduplicated app icons (max 3). Hover effects and active state highlighting
-- **CenterInfo.qml**: DND toggle + date + weather. Click shows popup with location, temperature, condition, feels-like, min/max, wind, humidity, visibility, AQI (color-coded), and hourly rain forecast bars. Weather icon/temp colored by temperature. Caches weather data for offline use.
+- **CenterInfo.qml**: DND toggle + date + weather. Click shows popup with notch design connecting to bar. Displays location, temperature, condition, feels-like, min/max, and hourly rain forecast bars. Weather icon/temp colored by temperature. Caches weather data for offline use.
 - **SystemStats.qml**: CPU, memory, disk, volume (with mute detection and audio sink icons for speaker/headphone/bluetooth/HDMI), battery
 - **WifiWidget.qml**: WiFi status with network speed display (upload/download), dropdown for network selection
 - **BluetoothWidget.qml**: Bluetooth status with dropdown. Icon turns green when device connected
@@ -89,7 +89,6 @@ components/         # Modular widget components
        id: myWidget
        popupWidth: 200
        popupHeight: 150
-       popupXOffset: 250  // from right edge of bar
 
        // Icon content (default property - what shows in bar)
        Text {
@@ -109,5 +108,5 @@ components/         # Modular widget components
        onOpened: someProcess.running = true
    }
    ```
-   The base component handles: barWindow connection, dropdownOpen state, MouseArea toggle, HyprlandFocusGrab, and PopupWindow with styled Rectangle container.
+   The base component handles: barWindow connection, dropdownOpen state, MouseArea toggle, HyprlandFocusGrab, and PopupWindow with notch design (concave corners connecting narrow stem to wider body). Popup is automatically centered on the icon.
 - no need to restart quickshell, it hot reloads the config on save.

@@ -58,24 +58,71 @@ Item {
         id: popup
         visible: dropdownOpen
         anchor.window: barWindow
-        anchor.rect.x: barWindow.width - popupXOffset
-        anchor.rect.y: 40
+        anchor.rect.x: root.x + iconContainer.x + iconContainer.width/2 - popupWidth/2
+        anchor.rect.y: 32
         implicitWidth: popupWidth
         implicitHeight: popupHeight
         color: "transparent"
 
-        Rectangle {
+        // Main card with notch corners
+        Canvas {
+            id: cardRect
             anchors.fill: parent
-            color: Theme.colBg
-            radius: 10
-            border.color: Theme.colMuted
-            border.width: 1
 
-            Loader {
-                id: popupLoader
-                anchors.fill: parent
-                anchors.margins: 8
+            property int stemWidth: iconContainer.width + 16
+            property int stemHeight: 12
+            property int notchRadius: 10
+            property int cardRadius: 12
+
+            onPaint: {
+                var ctx = getContext("2d")
+                ctx.fillStyle = Theme.colBg
+
+                var sw = stemWidth
+                var sh = stemHeight
+                var nr = notchRadius
+                var r = cardRadius
+                var w = width
+                var h = height
+                var cx = w / 2
+
+                var stemLeft = cx - sw/2
+                var stemRight = cx + sw/2
+
+                ctx.beginPath()
+                ctx.moveTo(stemLeft + r, 0)
+                ctx.lineTo(stemRight - r, 0)
+                ctx.arcTo(stemRight, 0, stemRight, r, r)
+                ctx.lineTo(stemRight, sh - nr)
+                ctx.arcTo(stemRight, sh, stemRight + nr, sh, nr)
+                ctx.lineTo(w - r, sh)
+                ctx.arcTo(w, sh, w, sh + r, r)
+                ctx.lineTo(w, h - r)
+                ctx.arcTo(w, h, w - r, h, r)
+                ctx.lineTo(r, h)
+                ctx.arcTo(0, h, 0, h - r, r)
+                ctx.lineTo(0, sh + r)
+                ctx.arcTo(0, sh, r, sh, r)
+                ctx.lineTo(stemLeft - nr, sh)
+                ctx.arcTo(stemLeft, sh, stemLeft, sh - nr, nr)
+                ctx.lineTo(stemLeft, r)
+                ctx.arcTo(stemLeft, 0, stemLeft + r, 0, r)
+                ctx.closePath()
+                ctx.fill()
             }
+        }
+
+        MouseArea {
+            anchors.fill: parent
+        }
+
+        Loader {
+            id: popupLoader
+            anchors.fill: parent
+            anchors.topMargin: cardRect.stemHeight + 8
+            anchors.leftMargin: 8
+            anchors.rightMargin: 8
+            anchors.bottomMargin: 8
         }
 
         onVisibleChanged: {

@@ -51,7 +51,7 @@ ShellRoot {
 
             Rectangle {
                 anchors.fill: parent
-                color: Theme.colBgTransparent
+                color: Theme.colBg
                 radius: 10
 
                 RowLayout {
