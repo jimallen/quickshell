@@ -23,5 +23,5 @@ QtObject {
 
     // Font
     readonly property string fontFamily: "JetBrainsMono Nerd Font"
-    readonly property int fontSize: 14
+    readonly property int fontSize: 15
 }
