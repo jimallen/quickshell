@@ -37,7 +37,7 @@ A modern, feature-rich status bar for Hyprland built with [Quickshell](https://q
 
 ### Included
 
-- `scripts/weather.py` - Weather data script (outputs JSON with waybar-compatible format). Requires a weather API key configured in the script.
+- `scripts/weather.py` - Weather data script (outputs JSON with waybar-compatible format). Uses weather.com and auto-detects location via IP. Requires `pyquery` (`pip install pyquery`).
 
 ## Installation
 
