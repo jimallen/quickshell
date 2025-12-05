@@ -35,9 +35,9 @@ A modern, feature-rich status bar for Hyprland built with [Quickshell](https://q
 - `jq` - JSON parsing
 - A [Nerd Font](https://www.nerdfonts.com/) - For icons (Material Design Icons range recommended)
 
-### Optional
+### Included
 
-- Weather script at `~/.config/hypr/UserScripts/Weather.py` - For weather data (outputs JSON with waybar-compatible format)
+- `scripts/weather.py` - Weather data script (outputs JSON with waybar-compatible format). Requires a weather API key configured in the script.
 
 ## Installation
 

@@ -270,7 +270,7 @@ Item {
     Process {
         id: weatherProc
         property string output: ""
-        command: ["sh", "-c", "$HOME/.config/hypr/UserScripts/Weather.py 2>/dev/null"]
+        command: ["sh", "-c", "$HOME/.config/quickshell/scripts/weather.py 2>/dev/null"]
         stdout: SplitParser {
             onRead: data => {
                 if (data) weatherProc.output += data

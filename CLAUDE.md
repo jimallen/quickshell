@@ -12,8 +12,8 @@ This is a Quickshell configuration for a Hyprland Wayland desktop bar. The confi
 # Restart quickshell to apply changes
 pkill -x quickshell; sleep 0.5; quickshell &
 
-# Test weather script (uses ~/.config/hypr/UserScripts/Weather.py)
-~/.config/hypr/UserScripts/Weather.py | jq -r '.text'
+# Test weather script
+~/.config/quickshell/scripts/weather.py | jq -r '.text'
 ```
 
 ## Architecture
@@ -76,7 +76,7 @@ components/         # Modular widget components
 - `wpctl` / `pactl` for volume control and audio sink detection
 - `hyprctl` for workspace/window data
 - `jq` for JSON parsing
-- `~/.config/hypr/UserScripts/Weather.py` for weather data (outputs JSON with `text` field)
+- `scripts/weather.py` for weather data (outputs JSON with waybar-compatible format)
 
 ### Adding New Widgets
 
